@@ -14,16 +14,18 @@ a=lattConst(1);
 b=lattConst(2);
 for n=1:atomnumber
     for i= 1:expanNum(1)+1
-        for j=1:expanNum(2)+1 %+1是为了防止周围空白一行
-            rx=a*fracTypeCoord(3,n)+(i-1)*a;
-            ry=b*fracTypeCoord(4,n)+(j-1)*b;
+        for j= 1:expanNum(2)+1 %+1个是为了防止周围空白一行
+            rx=a*fracTypeCoord(3,n)+(i-1)*a- Lx/2;
+            ry=b*fracTypeCoord(4,n)+(j-1)*b- Ly/2;
             r0=[rx,ry];
             A=MonoSEobjectfunction(Z(n),theta_0,params,Nx,Ny,Lx,Ly,r0);
             multiSEobjectfunction=multiSEobjectfunction+A;
         end
     end
 end
-figure
-imagesc(multiSEobjectfunction)
+% figure
+% imagesc(multiSEobjectfunction)
+% axis square;
+% title('SEobjectfunction');
 
 end

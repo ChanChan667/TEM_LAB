@@ -28,11 +28,11 @@ fy=InitFreqAxis(Ly, Ny);
 
 % using fft to calculate A
 q=sqrt(Fx.^2+Fy.^2);
-theta=asin(q/k);
+theta=q*lambda;
 A=sqrt(thetaE^2./(thetaE^2+theta.^2)./(theta.^2+theta_0^2));%.*...
     %CircApert_X(Lx, Ly, Nx, Ny, lambda,2*pi*1e3);
-A=ifft2(fftshift(A.*exp(1i*(Fx*r0(1)+Fy*r0(2)))));
-monoSEobjectfunction=abs(ifftshift(A));
+A=fft2(fftshift(A.*exp(1i*2*pi*(Fx*r0(1)+Fy*r0(2)))));
+monoSEobjectfunction=real(ifftshift(A));
 
 
 
