@@ -1,4 +1,4 @@
-function [stemImg,SEimage] = STEM_X_SE(Lx, Ly, params, transFuncs,SEobjectfunction,MFP, sliceDist,...
+function [stemImg,SEimage_foroneslice,SEimage] = STEM_X_SE(Lx, Ly, params, transFuncs,SEobjectfunction,MFP, sliceDist,...
     stackNum,saveSliceSeries, aberrType, cbedOption, cbedDir, preferrence, varargin)
 %STEM_X.m is a specially designed multislice interface for STEM simulation.
 %   Lx, Ly -- sampling sidelength in angstrom;
@@ -121,7 +121,8 @@ totalCompTask = scanNy * scanNx;
 process = waitbar(0, 'start scanning');
 saveSliceNum=length(saveSliceSeries);
 % wavemat=zeros(Nx,Ny,saveSliceNum);
-SEimage=zeros(scanNy,scanNx,saveSliceNum);
+SEimage=zeros(scanNy,scanNx);
+SEimage_foroneslice=zeros(scanNy,scanNx,saveSliceNum);
 for iy = 1 : scanNy
     for ix = 1 : scanNx
         saveSliceId=1;
@@ -131,12 +132,13 @@ for iy = 1 : scanNy
             Lx, Ly, Nx, Ny));
         for stackIdx = 1 : stackNum
             for sliceIdx = 1 : sliceNum
+                SEimage(iy,ix)=SEimage(iy,ix)+sum(abs(tempwave).^2.*SEobjectfunction(mode(sliceIdx,sliceNum)),'all');
                 tempWave = tempWave .* transFuncs(:,:,sliceIdx);
                 tempWave = ifft2(shiftPropKer(:, :, sliceIdx) .* fft2(tempWave));
                 if saveSliceId<=saveSliceNum
                     if sliceIdx+sliceNum*stackIdx==saveSliceId
                          %wavemat(:,:,saveSliceIdx)=ifftshift(tempwave);
-                        SEimage(iy,ix,saveSliceId)=sum(abs(ifftshift(tempwave)).^2.*...
+                        SEimage_foroneslice(iy,ix,saveSliceId)=sum(abs(ifftshift(tempwave)).^2.*...
                             SEobjectfunction(mode(sliceIdx+1,sliceNum)),'all')*exp(-sliceDist(1)*sliceIdx/MFP);%这里slicedist不准确
                         saveSliceId=saveSliceId+1;
                     end
