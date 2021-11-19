@@ -1,5 +1,5 @@
-function [stemImg,SEimage_foroneslice,SEimage] = STEM_X_SE(Lx, Ly, params, transFuncs,SEobjectfunction,MFP, sliceDist,...
-    stackNum,saveSliceSeries, aberrType, cbedOption, cbedDir, preferrence, varargin)
+function [stemImg,SEimage] = STEM_X_SE(Lx, Ly, params, transFuncs,SEobjectfunction,MFP, sliceDist,...
+    stackNum, aberrType, cbedOption, cbedDir, preferrence, varargin)
 %STEM_X.m is a specially designed multislice interface for STEM simulation.
 %   Lx, Ly -- sampling sidelength in angstrom;
 %   params -- STEM parameter setting:
@@ -119,39 +119,43 @@ stemImg = zeros(scanNy, scanNx, detectorNum);
 
 totalCompTask = scanNy * scanNx;
 process = waitbar(0, 'start scanning');
-saveSliceNum=length(saveSliceSeries);
+
 % wavemat=zeros(Nx,Ny,saveSliceNum);
 SEimage=zeros(scanNy,scanNx);
-SEimage_foroneslice=zeros(scanNy,scanNx,saveSliceNum);
+stackthickness=sum(sliceDist);
 for iy = 1 : scanNy
     for ix = 1 : scanNx
-        saveSliceId=1;
+
         doneRatio = ((iy - 1) * scanNx + ix - 1) / totalCompTask;
         waitbar(doneRatio, process, [num2str(roundn(doneRatio, -3) * 100), '%']);
         tempWave = fftshift(GenerateProbe_X(otf, params.scanx(ix), params.scany(iy),...
             Lx, Ly, Nx, Ny));
+
         for stackIdx = 1 : stackNum
+            tempthickness=stackthickness*stackIdx;
             for sliceIdx = 1 : sliceNum
-                SEimage(iy,ix)=SEimage(iy,ix)+sum(abs(tempwave).^2.*SEobjectfunction(mode(sliceIdx,sliceNum)),'all');
-                tempWave = tempWave .* transFuncs(:,:,sliceIdx);
+                
+                %                 figure
+                %                 imagesc(fftshift(SEobjectfunction(:,:,mode(sliceIdx,sliceNum))))
+                SEimage(iy,ix)=SEimage(iy,ix)+sum(abs(ifftshift(tempWave)).^2.*...
+                    fftshift(SEobjectfunction(:, :, sliceIdx)),'all')*...
+                    exp(-tempthickness/MFP);
+                tempWave = tempWave .* transFuncs(:, :, sliceIdx);
                 tempWave = ifft2(shiftPropKer(:, :, sliceIdx) .* fft2(tempWave));
-                if saveSliceId<=saveSliceNum
-                    if sliceIdx+sliceNum*stackIdx==saveSliceId
-                         %wavemat(:,:,saveSliceIdx)=ifftshift(tempwave);
-                        SEimage_foroneslice(iy,ix,saveSliceId)=sum(abs(ifftshift(tempwave)).^2.*...
-                            SEobjectfunction(mode(sliceIdx+1,sliceNum)),'all')*exp(-sliceDist(1)*sliceIdx/MFP);%这里slicedist不准确
-                        saveSliceId=saveSliceId+1;
-                    end
-                end
+                tempthickness=tempthickness+sliceDist(sliceIdx);
+                
+
+
             end
         end
+
         tmpCbed = abs((ifftshift(fft2(tempWave))*dx*dy).^2);
-        
+
         for detectorIdx = 1 : detectorNum
             stemImg(iy, ix, detectorIdx) = sum(tmpCbed .*...
                 params.detector(:, :, detectorIdx), 'all');
         end
-        
+
         if cbedOption == 1
             cbedName = ['cbed_y', num2str(iy), '_x', num2str(ix), '.bin'];
             cbedName = fullfile(cbedDir, cbedName);
@@ -160,6 +164,6 @@ for iy = 1 : scanNy
     end
 end
 delete(process);
-
+SEimage=ifftshift(SEimage);
 end
 

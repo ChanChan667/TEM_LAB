@@ -19,11 +19,11 @@
 % ADF-STEM sample 1: SrTiO3 100
 clc;
 close all;
-clear all;
+
 %% specimen preparation:
 lattConst = [3.9051, 3.9051, 0]; % [a b]
 sliceDist = [1.9525, 1.9525]; % distance between each slice
-expanNum = [5,8]; % expand the unit cell by Expan_Nx = 3 and Expan_Ny = 2, adaptive
+expanNum = [5,5]; % expand the unit cell by Expan_Nx = 3 and Expan_Ny = 2, adaptive
 % Laters: Each column for an atom
 sliceA = [38,   8;...
           1,    1;...
@@ -59,16 +59,16 @@ params.detector(:, :, 1) = AnnularDetector_X(90, 170, wavLen, Lx, Ly, Nx, Ny);
 params.detector(:, :, 2) = AnnularDetector_X(11, 22, wavLen, Lx, Ly, Nx, Ny);
 %% Transmission functions:
 projPotA = MultiProjPot_conv_X(sliceA, expanNum, lattConst, Lx, Ly, Nx, Ny, 1e-5);
-figure;
-imagesc(projPotA);
-colormap('gray'); axis square;
-title('Proj.Pot. A');
+% figure;
+% imagesc(projPotA);
+% colormap('gray'); axis square;
+% title('Proj.Pot. A');
 
 projPotB = MultiProjPot_conv_X(sliceB, expanNum, lattConst, Lx, Ly, Nx, Ny, 1e-5);
-figure;
-imagesc(projPotB);
-colormap('gray'); axis square;
-title('Proj.Pot. B');
+% figure;
+% imagesc(projPotB);
+% colormap('gray'); axis square;
+% title('Proj.Pot. B');
 tic;
 tfA = exp(1i * interCoeff * projPotA / 1000);
 tfB = exp(1i * interCoeff * projPotB / 1000);
@@ -85,30 +85,33 @@ theta_0=0.1;
 MFP=10;
 SEA=MultiSEobjectfunction(theta_0,params,Nx,Ny,Lx,Ly,sliceA, expanNum, lattConst);
 SEB=MultiSEobjectfunction(theta_0,params,Nx,Ny,Lx,Ly,sliceB, expanNum, lattConst);
+
+figure;
+imagesc(SEA);
+axis square
+figure;
+imagesc(SEB);
+axis square
+
 SEobfun(:,:,1)=SEA;
 SEobfun(:,:,2)=SEB;
 
-[stemImg,SEimage_foroneslce,SEimage] = STEM_X_SE(Lx, Ly, params, transFuncs,SEobfun,MFP, sliceDist, stackNum,[1,5,10,20,40], 'reduced',...
+[stemImg,SEimage] = STEM_X_SE(Lx, Ly, params, transFuncs,SEobfun,MFP, sliceDist, stackNum, 'reduced',...
     cbedOption);
 toc;
 
-repStemImg = repmat(stemImg, 6, 6, 1);
-stemImg_1 = mat2gray(repStemImg(:, :, 1));
-stemImg_2 = mat2gray(repStemImg(:, :, 2));
+% repStemImg = repmat(stemImg, 6, 6, 1);
+% stemImg_1 = mat2gray(repStemImg(:, :, 1));
+% stemImg_2 = mat2gray(repStemImg(:, :, 2));
 
 figure;
-imshowpair(stemImg_1, stemImg_2, 'montage');
-
-figure
-imagesc(SEimage_foroneslce(:,:,1));
+imagesc(stemImg(:,:,1));
 colormap gray;axis square
-
-figure
-imagesc(SEimage_foroneslce(:,:,2));
-colormao gray; axis square
-
-figure
+title('ADF')
+% repSEImg = repmat(SEimage, 6, 6);
+figure;
 imagesc(SEimage)
-colormap gray; axis square
+colormap gray;axis square
+title('SE')
 
 
